@@ -1,0 +1,162 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "Impact Analysis API"
+host: "localhost:8080"
+basePath: "/v1"
+schemes:
+  - "https"
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+
+securityDefinitions:
+  BearerToken:
+    type: apiKey
+    in: header
+    name: Authorization
+
+paths:
+  /token:
+    get:
+      description: "retrieve token for authenticaton"
+      tags:
+        - service
+      parameters:
+        - in: "query"
+          name: "username"
+          type: "string"
+          required: true
+          minimum: 1
+          description: "The number of migrations to return. Initial value is 1"
+      responses:
+        200:
+          description: "token retrieved"
+          schema:
+            $ref: "#/definitions/TokenResponse"
+        400:
+          description: "bad request"
+        500:
+          description: "internal server error"
+
+  /users:
+    get:
+      description: "retrieve list of users"
+      tags:
+        - service
+      security:
+        - BearerToken: []
+      responses:
+        200:
+          description: "user retrieved"
+          schema:
+            type: "object"
+            required:
+              - users
+            properties:
+              users:
+                type: "array"
+                items:
+                  type: "string"
+        401:
+          $ref: '#/responses/UnauthorizedError'
+        500:
+          description: "internal server error"
+
+  /all-cases:
+    get:
+      description: "retrieve all covid cases reported today"
+      tags:
+        - service
+      security:
+        - BearerToken: []
+      responses:
+        200:
+          description: "covid cases retrieved"
+          schema:
+            type: "object"
+            required:
+              - total_cases
+              - today_date
+            properties:
+              today_date:
+                type: "string"
+              total_cases:
+                type: "string"
+        401:
+          $ref: '#/responses/UnauthorizedError'
+        500:
+          description: "internal server error"
+
+  /country-cases:
+    get:
+      description: "retrieve all covid cases for country"
+      tags:
+        - service
+      parameters:
+        - in: "query"
+          name: "country_name"
+          type: "string"
+        - in: "query"
+          name: "date_from"
+          type: "string"
+          pattern: '^\d{1,2}\/\d{1,2}\/\d{2}$'
+      security:
+        - BearerToken: []
+      responses:
+        200:
+          description: "country covid cases retrieved"
+          schema:
+            type: "array"
+            items:
+              type: "object"
+        401:
+          $ref: '#/responses/UnauthorizedError'
+        500:
+          description: "internal server error"
+
+  /top-cases-countries:
+    get:
+      description: "retrieve top N countries with most reported cases today"
+      tags:
+        - service
+      parameters:
+        - in: "query"
+          name: "count"
+          type: "integer"
+          required: true
+          minimum: 1
+          description: "The number of countries to return. Initial value is 1"
+      security:
+        - BearerToken: []
+      responses:
+        200:
+          description: "top N countries with most covid cases retrieved"
+          schema:
+            type: "array"
+            items:
+              type: "object"
+        401:
+          $ref: '#/responses/UnauthorizedError'
+        500:
+          description: "internal server error"
+
+definitions:
+  TokenResponse:
+    type: "object"
+    required:
+      - token
+      - username
+    properties:
+      username:
+        type: "string"
+      token:
+        type: "string"
+
+responses:
+  UnauthorizedError:
+    description: Token is missing or invalid
+    headers:
+      WWW_Authenticate:
+        type: string
